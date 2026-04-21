@@ -26,11 +26,13 @@ function kmeanspp(samples: RGB[], k: number): RGB[] {
     })
     const total = dists.reduce((a, b) => a + b, 0)
     let r = Math.random() * total
+    let added = false
     for (let i = 0; i < samples.length; i++) {
       r -= dists[i]
-      if (r <= 0) { centroids.push(samples[i]); break }
+      if (r <= 0) { centroids.push(samples[i]); added = true; break }
     }
-    if (centroids.length < centroids.length + 1) centroids.push(samples[samples.length - 1])
+    // Fallback only if the weighted draw didn't land (floating-point edge case)
+    if (!added) centroids.push(samples[samples.length - 1])
   }
   return centroids
 }
@@ -91,5 +93,24 @@ self.onmessage = (e: MessageEvent) => {
   const pixelCounts = new Uint32Array(k)
   for (let i = 0; i < totalPixels; i++) pixelCounts[clusterMap[i]]++
 
-  self.postMessage({ clusterMap, centroids, pixelCounts }, [clusterMap.buffer, pixelCounts.buffer])
+  // Sort clusters largest → smallest by pixel count
+  const order = Array.from({ length: k }, (_, i) => i)
+    .sort((a, b) => pixelCounts[b] - pixelCounts[a])
+
+  // Build old-index → new-index remapping
+  const remap = new Uint8Array(k)
+  for (let ni = 0; ni < k; ni++) remap[order[ni]] = ni
+
+  // Remap clusterMap in-place
+  for (let i = 0; i < totalPixels; i++) clusterMap[i] = remap[clusterMap[i]]
+
+  // Reorder centroids and pixelCounts to match sorted order
+  const sortedCentroids = order.map(oi => centroids[oi])
+  const sortedPixelCounts = new Uint32Array(k)
+  for (let ni = 0; ni < k; ni++) sortedPixelCounts[ni] = pixelCounts[order[ni]]
+
+  self.postMessage(
+    { clusterMap, centroids: sortedCentroids, pixelCounts: sortedPixelCounts },
+    [clusterMap.buffer, sortedPixelCounts.buffer],
+  )
 }
