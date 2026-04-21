@@ -1,7 +1,8 @@
 import type { FC } from 'react'
-import type { Cluster, ColorFormat, RGBColor } from '../types'
+import type { Cluster, ColorFormat, NoiseSettings, RGBColor } from '../types'
 import ClusterSwatch from './ClusterSwatch'
 import ColorPicker from './ColorPicker'
+import NoisePanel from './NoisePanel'
 
 interface Props {
   clusters: Cluster[]
@@ -10,6 +11,7 @@ interface Props {
   clusterCount: number
   isProcessing: boolean
   totalPixels: number
+  noiseSettings: NoiseSettings
   onSelectCluster: (id: number) => void
   onToggleVisibility: (id: number) => void
   onColorChange: (id: number, color: RGBColor) => void
@@ -17,6 +19,8 @@ interface Props {
   onColorFormatChange: (f: ColorFormat) => void
   onClusterCountChange: (n: number) => void
   onReRun: () => void
+  onNoiseSettingsChange: (s: NoiseSettings) => void
+  onNoiseRegenerate: () => void
 }
 
 const Sidebar: FC<Props> = ({
@@ -26,6 +30,7 @@ const Sidebar: FC<Props> = ({
   clusterCount,
   isProcessing,
   totalPixels,
+  noiseSettings,
   onSelectCluster,
   onToggleVisibility,
   onColorChange,
@@ -33,6 +38,8 @@ const Sidebar: FC<Props> = ({
   onColorFormatChange,
   onClusterCountChange,
   onReRun,
+  onNoiseSettingsChange,
+  onNoiseRegenerate,
 }) => {
   const selected = selectedCluster !== null ? clusters[selectedCluster] : null
 
@@ -117,9 +124,7 @@ const Sidebar: FC<Props> = ({
         <>
           <div className="sidebar-divider" />
           <section className="sidebar-section">
-            <p className="sidebar-label">
-              Edit Cluster {selected.id + 1}
-            </p>
+            <p className="sidebar-label">Edit Cluster {selected.id + 1}</p>
             <ColorPicker
               color={selected.currentColor}
               format={colorFormat}
@@ -138,6 +143,19 @@ const Sidebar: FC<Props> = ({
           </section>
         </>
       )}
+
+      <div className="sidebar-divider" />
+
+      {/* Noise & texture */}
+      <section className="sidebar-section">
+        <p className="sidebar-label">Noise & Texture</p>
+        <NoisePanel
+          settings={noiseSettings}
+          disabled={clusters.length === 0}
+          onSettingsChange={onNoiseSettingsChange}
+          onRegenerate={onNoiseRegenerate}
+        />
+      </section>
     </aside>
   )
 }

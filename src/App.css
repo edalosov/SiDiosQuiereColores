@@ -606,3 +606,100 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
   color: var(--text-3);
   margin-top: 4px;
 }
+
+/* ─── Noise panel ───────────────────────────────────────────── */
+.noise-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.noise-disabled {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.noise-header {
+  margin-bottom: 4px;
+}
+
+.noise-enable-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.noise-enable-btn:hover { color: var(--text) }
+.noise-enable-btn.active { color: var(--accent) }
+
+/* Toggle track */
+.noise-toggle-track {
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.noise-toggle-track.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.noise-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: transform 0.2s, background 0.2s;
+}
+.noise-toggle-track.on .noise-toggle-thumb {
+  transform: translateX(14px);
+  background: #fff;
+}
+
+.noise-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.noise-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.noise-row-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.noise-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.noise-value {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-2);
+}

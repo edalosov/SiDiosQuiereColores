@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { Cluster, ClusterSnapshot, ColorFormat, RGBColor } from './types'
+import type { Cluster, ClusterSnapshot, ColorFormat, NoiseSettings, RGBColor } from './types'
+import { generateNoiseMap, applyNoise } from './utils/noise'
 import Toolbar from './components/Toolbar'
 import Sidebar from './components/Sidebar'
 import ImageCanvas from './components/ImageCanvas'
 import ImageUpload from './components/ImageUpload'
+
+const DEFAULT_NOISE: NoiseSettings = {
+  enabled: false,
+  type: 'grain',
+  amount: 20,
+  scale: 1,
+}
 
 export default function App() {
   const [imageData, setImageData] = useState<ImageData | null>(null)
@@ -15,6 +23,10 @@ export default function App() {
   const [showOriginal, setShowOriginal] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
 
+  // Noise
+  const [noiseSettings, setNoiseSettings] = useState<NoiseSettings>(DEFAULT_NOISE)
+  const [noiseMap, setNoiseMap] = useState<Float32Array | null>(null)
+
   // History for undo/redo
   const [historyStack, setHistoryStack] = useState<ClusterSnapshot[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
@@ -22,6 +34,15 @@ export default function App() {
   const workerRef = useRef<Worker | null>(null)
   const clustersRef = useRef<Cluster[]>(clusters)
   useEffect(() => { clustersRef.current = clusters }, [clusters])
+
+  // Regenerate noise map when image is loaded or type/scale changes
+  const regenerateNoise = useCallback((
+    data: ImageData,
+    settings: NoiseSettings,
+  ) => {
+    const map = generateNoiseMap(data.width, data.height, settings.type, settings.scale)
+    setNoiseMap(map)
+  }, [])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -76,7 +97,7 @@ export default function App() {
 
     const worker = new Worker(
       new URL('./workers/kmeans.worker.ts', import.meta.url),
-      { type: 'module' }
+      { type: 'module' },
     )
     workerRef.current = worker
 
@@ -90,7 +111,7 @@ export default function App() {
       const newClusters: Cluster[] = centroids.map((c, i) => ({
         id: i,
         originalColor: { r: c[0], g: c[1], b: c[2] },
-        currentColor: { r: c[0], g: c[1], b: c[2] },
+        currentColor:  { r: c[0], g: c[1], b: c[2] },
         visible: true,
         pixelCount: pixelCounts[i],
       }))
@@ -99,7 +120,6 @@ export default function App() {
       setClusters(newClusters)
       setIsProcessing(false)
 
-      // Reset history with the initial clustering state as entry 0
       const snap = snapshotFromClusters(newClusters)
       setHistoryStack([snap])
       setHistoryIndex(0)
@@ -113,17 +133,13 @@ export default function App() {
       workerRef.current = null
     }
 
-    worker.postMessage({
-      pixels: data.data,
-      width: data.width,
-      height: data.height,
-      k,
-    })
+    worker.postMessage({ pixels: data.data, width: data.width, height: data.height, k })
   }, [])
 
-  const handleImage = (img: HTMLImageElement, data: ImageData) => {
+  const handleImage = (_img: HTMLImageElement, data: ImageData) => {
     setImageData(data)
     runClustering(data, clusterCount)
+    regenerateNoise(data, noiseSettings)
   }
 
   const handleClusterCountChange = (n: number) => {
@@ -139,9 +155,7 @@ export default function App() {
     setClusters(prev => prev.map(c => c.id === id ? { ...c, currentColor: color } : c))
   }
 
-  const handleColorCommit = () => {
-    pushHistory(clustersRef.current)
-  }
+  const handleColorCommit = () => { pushHistory(clustersRef.current) }
 
   const handleToggleVisibility = (id: number) => {
     setClusters(prev => {
@@ -151,6 +165,15 @@ export default function App() {
     })
   }
 
+  const handleNoiseSettingsChange = (s: NoiseSettings) => {
+    setNoiseSettings(s)
+  }
+
+  const handleNoiseRegenerate = useCallback(() => {
+    if (imageData) regenerateNoise(imageData, noiseSettings)
+  }, [imageData, noiseSettings, regenerateNoise])
+
+  // Download — applies cluster colors + noise, same as canvas render
   const handleDownload = (format: 'png' | 'jpeg') => {
     if (!imageData || !clusterMap || !clusters.length) return
 
@@ -169,13 +192,16 @@ export default function App() {
         if (format === 'jpeg') {
           out.data[pi] = 255; out.data[pi + 1] = 255; out.data[pi + 2] = 255; out.data[pi + 3] = 255
         }
-        // PNG: alpha stays 0 (transparent)
       } else {
-        out.data[pi] = cluster.currentColor.r
+        out.data[pi]     = cluster.currentColor.r
         out.data[pi + 1] = cluster.currentColor.g
         out.data[pi + 2] = cluster.currentColor.b
         out.data[pi + 3] = 255
       }
+    }
+
+    if (noiseSettings.enabled && noiseSettings.amount > 0 && noiseMap) {
+      applyNoise(out.data, noiseMap, noiseSettings)
     }
 
     ctx.putImageData(out, 0, 0)
@@ -212,6 +238,7 @@ export default function App() {
           clusterCount={clusterCount}
           isProcessing={isProcessing}
           totalPixels={totalPixels}
+          noiseSettings={noiseSettings}
           onSelectCluster={setSelectedCluster}
           onToggleVisibility={handleToggleVisibility}
           onColorChange={handleColorChange}
@@ -219,6 +246,8 @@ export default function App() {
           onColorFormatChange={setColorFormat}
           onClusterCountChange={handleClusterCountChange}
           onReRun={handleReRun}
+          onNoiseSettingsChange={handleNoiseSettingsChange}
+          onNoiseRegenerate={handleNoiseRegenerate}
         />
         <div className="canvas-area">
           {imageData && clusterMap && clusters.length > 0 ? (
@@ -228,6 +257,8 @@ export default function App() {
               clusters={clusters}
               selectedCluster={selectedCluster}
               showOriginal={showOriginal}
+              noiseSettings={noiseSettings}
+              noiseMap={noiseMap}
               onSelectCluster={setSelectedCluster}
             />
           ) : (

@@ -25,3 +25,10 @@ export type ClusterSnapshot = {
   currentColor: RGBColor
   visible: boolean
 }[]
+
+export interface NoiseSettings {
+  enabled: boolean
+  type: 'grain' | 'colored' | 'salt-pepper'
+  amount: number   // 0–100
+  scale: number    // 1–8  (fine → coarse grain size)
+}
