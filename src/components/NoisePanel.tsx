@@ -5,7 +5,7 @@ interface Props {
   settings: NoiseSettings
   disabled: boolean
   onSettingsChange: (s: NoiseSettings) => void
-  onRegenerate: () => void
+  onRegenerate: (s: NoiseSettings) => void
 }
 
 const TYPE_LABELS: Record<NoiseSettings['type'], string> = {
@@ -21,7 +21,9 @@ const TYPE_TIPS: Record<NoiseSettings['type'], string> = {
 }
 
 const NoisePanel: FC<Props> = ({ settings, disabled, onSettingsChange, onRegenerate }) => {
-  const set = (patch: Partial<NoiseSettings>) => onSettingsChange({ ...settings, ...patch })
+  // Always build the merged object first so every caller has the exact new value
+  const merge = (patch: Partial<NoiseSettings>): NoiseSettings => ({ ...settings, ...patch })
+  const set = (patch: Partial<NoiseSettings>) => onSettingsChange(merge(patch))
 
   return (
     <div className={`noise-panel ${disabled ? 'noise-disabled' : ''}`}>
@@ -51,9 +53,9 @@ const NoisePanel: FC<Props> = ({ settings, disabled, onSettingsChange, onRegener
                   className={`format-btn ${settings.type === t ? 'active' : ''}`}
                   title={TYPE_TIPS[t]}
                   onClick={() => {
-                    set({ type: t })
-                    // type change requires a new noise map
-                    onRegenerate()
+                    const next = merge({ type: t })
+                    onSettingsChange(next)
+                    onRegenerate(next)
                   }}
                 >
                   {TYPE_LABELS[t]}
@@ -93,8 +95,9 @@ const NoisePanel: FC<Props> = ({ settings, disabled, onSettingsChange, onRegener
               max={8}
               value={settings.scale}
               onChange={e => {
-                set({ scale: +e.target.value })
-                onRegenerate()
+                const next = merge({ scale: +e.target.value })
+                onSettingsChange(next)
+                onRegenerate(next)
               }}
               className="cluster-slider"
             />
@@ -104,7 +107,7 @@ const NoisePanel: FC<Props> = ({ settings, disabled, onSettingsChange, onRegener
           </div>
 
           {/* Regenerate */}
-          <button className="btn-rerun" onClick={onRegenerate}>
+          <button className="btn-rerun" onClick={() => onRegenerate(settings)}>
             <DiceIcon />
             New Random Pattern
           </button>

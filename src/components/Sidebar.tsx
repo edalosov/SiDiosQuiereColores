@@ -20,7 +20,7 @@ interface Props {
   onClusterCountChange: (n: number) => void
   onReRun: () => void
   onNoiseSettingsChange: (s: NoiseSettings) => void
-  onNoiseRegenerate: () => void
+  onNoiseRegenerate: (s: NoiseSettings) => void
 }
 
 const Sidebar: FC<Props> = ({

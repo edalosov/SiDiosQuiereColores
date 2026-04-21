@@ -169,9 +169,10 @@ export default function App() {
     setNoiseSettings(s)
   }
 
-  const handleNoiseRegenerate = useCallback(() => {
-    if (imageData) regenerateNoise(imageData, noiseSettings)
-  }, [imageData, noiseSettings, regenerateNoise])
+  // Accepts the exact new settings so it never reads stale state from the closure
+  const handleNoiseRegenerate = useCallback((s: NoiseSettings) => {
+    if (imageData) regenerateNoise(imageData, s)
+  }, [imageData, regenerateNoise])
 
   // Download — applies cluster colors + noise, same as canvas render
   const handleDownload = (format: 'png' | 'jpeg') => {
