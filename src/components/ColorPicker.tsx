@@ -9,6 +9,8 @@ interface Props {
   onCommit: () => void
 }
 
+const hasEyeDropper = typeof window !== 'undefined' && 'EyeDropper' in window
+
 const ColorPicker: FC<Props> = ({ color, format, onChange, onCommit }) => {
   const pickerRef = useRef<HTMLDivElement>(null)
   const hueRef = useRef<HTMLDivElement>(null)
@@ -92,11 +94,33 @@ const ColorPicker: FC<Props> = ({ color, format, onChange, onCommit }) => {
         <div className="hue-cursor" style={{ left: `${(hsb.h / 360) * 100}%` }} />
       </div>
 
-      {/* Color preview strip */}
-      <div
-        className="color-preview-strip"
-        style={{ background: `rgb(${color.r},${color.g},${color.b})` }}
-      />
+      {/* Color preview + eyedropper */}
+      <div className="color-preview-row">
+        <div
+          className="color-preview-strip"
+          style={{ background: `rgb(${color.r},${color.g},${color.b})` }}
+        />
+        {hasEyeDropper && (
+          <button
+            className="eyedropper-btn"
+            title="Pick color from screen"
+            onClick={async () => {
+              try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const dropper = new (window as any).EyeDropper()
+                const result = await dropper.open()
+                const rgb = clampRgb(hexToRgb(result.sRGBHex))
+                onChange(rgb)
+                onCommit()
+              } catch {
+                // user cancelled — do nothing
+              }
+            }}
+          >
+            <EyeDropperIcon />
+          </button>
+        )}
+      </div>
 
       {/* Numeric inputs */}
       {format === 'HSB' && (
@@ -191,6 +215,16 @@ const ColorPicker: FC<Props> = ({ color, format, onChange, onCommit }) => {
         </div>
       )}
     </div>
+  )
+}
+
+function EyeDropperIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m2 22 1-1h3l9-9" />
+      <path d="M3 21v-3l9-9" />
+      <path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8Z" />
+    </svg>
   )
 }
 

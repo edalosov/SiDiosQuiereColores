@@ -441,11 +441,37 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
   pointer-events: none;
 }
 
+.color-preview-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
 .color-preview-strip {
-  width: 100%;
+  flex: 1;
   height: 28px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
+}
+
+.eyedropper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.eyedropper-btn:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+  border-color: var(--accent);
 }
 
 /* Inputs */
