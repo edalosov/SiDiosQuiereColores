@@ -170,19 +170,20 @@ const ColorPicker: FC<Props> = ({ color, format, onChange, onCommit }) => {
             <input
               type="text"
               value={hexInput.replace('#', '')}
-              maxLength={6}
+              maxLength={7}
               onFocus={() => setHexFocused(true)}
               onBlur={() => {
                 setHexFocused(false)
-                const parsed = hexToRgb('#' + hexInput.replace('#', ''))
+                const clean = hexInput.replace('#', '')
+                const parsed = hexToRgb('#' + clean)
                 onChange(clampRgb(parsed))
                 onCommit()
               }}
               onChange={e => {
-                const val = e.target.value
-                setHexInput(val)
-                if (/^[0-9a-fA-F]{6}$/.test(val)) {
-                  onChange(clampRgb(hexToRgb('#' + val)))
+                const clean = e.target.value.replace('#', '')
+                setHexInput(clean)
+                if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+                  onChange(clampRgb(hexToRgb('#' + clean)))
                 }
               }}
             />
