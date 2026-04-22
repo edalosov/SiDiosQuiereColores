@@ -51,6 +51,7 @@ export default function App() {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
         e.preventDefault(); handleRedo()
       }
+      if (e.key === 'Escape') setSelectedCluster(null)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

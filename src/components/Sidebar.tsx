@@ -12,7 +12,7 @@ interface Props {
   isProcessing: boolean
   totalPixels: number
   noiseSettings: NoiseSettings
-  onSelectCluster: (id: number) => void
+  onSelectCluster: (id: number | null) => void
   onToggleVisibility: (id: number) => void
   onColorChange: (id: number, color: RGBColor) => void
   onColorCommit: () => void
@@ -112,7 +112,7 @@ const Sidebar: FC<Props> = ({
               selected={selectedCluster === cluster.id}
               format={colorFormat}
               totalPixels={totalPixels}
-              onSelect={() => onSelectCluster(cluster.id)}
+              onSelect={() => onSelectCluster(selectedCluster === cluster.id ? null : cluster.id)}
               onToggleVisibility={() => onToggleVisibility(cluster.id)}
             />
           ))}

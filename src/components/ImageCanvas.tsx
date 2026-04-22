@@ -13,7 +13,7 @@ interface Props {
   showOriginal: boolean
   noiseSettings: NoiseSettings
   noiseMap: Float32Array | null
-  onSelectCluster: (id: number) => void
+  onSelectCluster: (id: number | null) => void
 }
 
 const ImageCanvas: FC<Props> = ({
@@ -44,7 +44,6 @@ const ImageCanvas: FC<Props> = ({
     const dst = out.data
     const n = imageData.width * imageData.height
 
-    // Step 1 — apply cluster colors
     for (let i = 0; i < n; i++) {
       const ci = clusterMap[i]
       const cluster = clusters[ci]
@@ -59,7 +58,6 @@ const ImageCanvas: FC<Props> = ({
       }
     }
 
-    // Step 2 — apply noise on top (skips transparent/hidden pixels)
     if (noiseSettings.enabled && noiseSettings.amount > 0 && noiseMap) {
       applyNoise(dst, noiseMap, noiseSettings)
     }
@@ -88,26 +86,6 @@ const ImageCanvas: FC<Props> = ({
   }, [imageData])
 
   useEffect(() => { render() }, [render])
-
-  // Selection highlight — renders then brightens selected cluster pixels
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || selectedCluster === null) return
-    const ctx = canvas.getContext('2d')!
-    render()
-
-    const out = ctx.getImageData(0, 0, imageData.width, imageData.height)
-    const n = imageData.width * imageData.height
-    for (let i = 0; i < n; i++) {
-      if (clusterMap[i] === selectedCluster) {
-        const pi = i * 4
-        out.data[pi]     = Math.min(255, out.data[pi]     + 40)
-        out.data[pi + 1] = Math.min(255, out.data[pi + 1] + 40)
-        out.data[pi + 2] = Math.min(255, out.data[pi + 2] + 40)
-      }
-    }
-    ctx.putImageData(out, 0, 0)
-  }, [selectedCluster, render, clusterMap, imageData])
 
   // Zoom on scroll, centered at cursor
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -154,14 +132,15 @@ const ImageCanvas: FC<Props> = ({
     if (e.button === 1) setIsPanning(false)
   }
 
-  // Click to select cluster
+  // Click: select cluster, or deselect if clicking the already-selected one
   const handleClick = (e: RMouseEvent) => {
     if (didPan.current) return
     const rect = containerRef.current!.getBoundingClientRect()
     const cx = Math.floor((e.clientX - rect.left - pan.x) / zoom)
     const cy = Math.floor((e.clientY - rect.top - pan.y) / zoom)
     if (cx < 0 || cx >= imageData.width || cy < 0 || cy >= imageData.height) return
-    onSelectCluster(clusterMap[cy * imageData.width + cx])
+    const clicked = clusterMap[cy * imageData.width + cx]
+    onSelectCluster(clicked === selectedCluster ? null : clicked)
   }
 
   return (
@@ -184,7 +163,7 @@ const ImageCanvas: FC<Props> = ({
         <canvas ref={canvasRef} className="main-canvas" />
       </div>
       <div className="canvas-hint">
-        Scroll to zoom · Middle-click drag to pan · Click image to select cluster
+        Scroll to zoom · Middle-click drag to pan · Click to select · Click again or Esc to deselect
       </div>
     </div>
   )
