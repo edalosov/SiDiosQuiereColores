@@ -32,3 +32,13 @@ export interface NoiseSettings {
   amount: number   // 0–100
   scale: number    // 1–8  (fine → coarse grain size)
 }
+
+export interface TextOverlay {
+  enabled: boolean
+  content: string
+  fontFamily: string
+  fontSize: number   // px, relative to source image
+  color: RGBColor
+  marginX: number    // px from left edge
+  marginY: number    // px from bottom edge
+}
