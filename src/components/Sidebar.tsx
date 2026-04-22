@@ -1,8 +1,9 @@
 import type { FC } from 'react'
-import type { Cluster, ColorFormat, NoiseSettings, RGBColor } from '../types'
+import type { Cluster, ColorFormat, NoiseSettings, RGBColor, TextOverlay } from '../types'
 import ClusterSwatch from './ClusterSwatch'
 import ColorPicker from './ColorPicker'
 import NoisePanel from './NoisePanel'
+import TextPanel from './TextPanel'
 
 interface Props {
   clusters: Cluster[]
@@ -12,6 +13,7 @@ interface Props {
   isProcessing: boolean
   totalPixels: number
   noiseSettings: NoiseSettings
+  textOverlay: TextOverlay
   onSelectCluster: (id: number | null) => void
   onToggleVisibility: (id: number) => void
   onColorChange: (id: number, color: RGBColor) => void
@@ -21,6 +23,7 @@ interface Props {
   onReRun: () => void
   onNoiseSettingsChange: (s: NoiseSettings) => void
   onNoiseRegenerate: (s: NoiseSettings) => void
+  onTextOverlayChange: (s: TextOverlay) => void
 }
 
 const Sidebar: FC<Props> = ({
@@ -31,6 +34,7 @@ const Sidebar: FC<Props> = ({
   isProcessing,
   totalPixels,
   noiseSettings,
+  textOverlay,
   onSelectCluster,
   onToggleVisibility,
   onColorChange,
@@ -40,6 +44,7 @@ const Sidebar: FC<Props> = ({
   onReRun,
   onNoiseSettingsChange,
   onNoiseRegenerate,
+  onTextOverlayChange,
 }) => {
   const selected = selectedCluster !== null ? clusters[selectedCluster] : null
 
@@ -154,6 +159,20 @@ const Sidebar: FC<Props> = ({
           disabled={clusters.length === 0}
           onSettingsChange={onNoiseSettingsChange}
           onRegenerate={onNoiseRegenerate}
+        />
+      </section>
+
+      <div className="sidebar-divider" />
+
+      {/* Text overlay */}
+      <section className="sidebar-section">
+        <p className="sidebar-label">Text Overlay</p>
+        <TextPanel
+          settings={textOverlay}
+          disabled={clusters.length === 0}
+          colorFormat={colorFormat}
+          onSettingsChange={onTextOverlayChange}
+          onColorCommit={onColorCommit}
         />
       </section>
     </aside>

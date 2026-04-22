@@ -729,3 +729,38 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
   font-family: 'SF Mono', 'Fira Code', monospace;
   color: var(--text-2);
 }
+
+/* ─── Text overlay panel ────────────────────────────────────── */
+.text-overlay-input {
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.text-overlay-input:focus { border-color: var(--accent) }
+.text-overlay-input::placeholder { color: var(--text-3) }
+
+.font-select {
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2371717a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 28px;
+}
+.font-select:focus { border-color: var(--accent) }
+.font-select option, .font-select optgroup { background: var(--sidebar-bg); color: var(--text) }

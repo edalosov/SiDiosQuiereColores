@@ -2,8 +2,9 @@ import {
   useRef, useEffect, useCallback, useState,
   type FC, type WheelEvent, type MouseEvent as RMouseEvent,
 } from 'react'
-import type { Cluster, NoiseSettings } from '../types'
+import type { Cluster, NoiseSettings, TextOverlay } from '../types'
 import { applyNoise } from '../utils/noise'
+import { loadGoogleFont } from '../utils/fonts'
 
 interface Props {
   imageData: ImageData
@@ -13,12 +14,13 @@ interface Props {
   showOriginal: boolean
   noiseSettings: NoiseSettings
   noiseMap: Float32Array | null
+  textOverlay: TextOverlay
   onSelectCluster: (id: number | null) => void
 }
 
 const ImageCanvas: FC<Props> = ({
   imageData, clusterMap, clusters, selectedCluster, showOriginal,
-  noiseSettings, noiseMap,
+  noiseSettings, noiseMap, textOverlay,
   onSelectCluster,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -58,12 +60,35 @@ const ImageCanvas: FC<Props> = ({
       }
     }
 
-    if (noiseSettings.enabled && noiseSettings.amount > 0 && noiseMap) {
-      applyNoise(dst, noiseMap, noiseSettings)
-    }
+    const hasText = textOverlay.enabled && textOverlay.content.trim().length > 0
+    const hasNoise = noiseSettings.enabled && noiseSettings.amount > 0 && noiseMap
 
-    ctx.putImageData(out, 0, 0)
-  }, [imageData, clusterMap, clusters, showOriginal, noiseSettings, noiseMap])
+    if (hasText) {
+      ctx.putImageData(out, 0, 0)
+      const { r, g, b } = textOverlay.color
+      ctx.font = `${textOverlay.fontSize}px "${textOverlay.fontFamily}"`
+      ctx.fillStyle = `rgb(${r},${g},${b})`
+      ctx.textBaseline = 'bottom'
+      ctx.fillText(textOverlay.content, textOverlay.marginX, imageData.height - textOverlay.marginY)
+      if (hasNoise) {
+        const withText = ctx.getImageData(0, 0, imageData.width, imageData.height)
+        applyNoise(withText.data, noiseMap!, noiseSettings)
+        ctx.putImageData(withText, 0, 0)
+      }
+    } else {
+      if (hasNoise) applyNoise(dst, noiseMap!, noiseSettings)
+      ctx.putImageData(out, 0, 0)
+    }
+  }, [imageData, clusterMap, clusters, showOriginal, noiseSettings, noiseMap, textOverlay])
+
+  const renderRef = useRef(render)
+  useEffect(() => { renderRef.current = render }, [render])
+
+  // Preload font and re-render when font family changes
+  useEffect(() => {
+    if (!textOverlay.enabled) return
+    loadGoogleFont(textOverlay.fontFamily).then(() => renderRef.current())
+  }, [textOverlay.fontFamily, textOverlay.enabled])
 
   // Set canvas size on image change and fit to container
   useEffect(() => {

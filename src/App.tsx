@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { Cluster, ClusterSnapshot, ColorFormat, NoiseSettings, RGBColor } from './types'
+import type { Cluster, ClusterSnapshot, ColorFormat, NoiseSettings, RGBColor, TextOverlay } from './types'
 import { generateNoiseMap, applyNoise } from './utils/noise'
 import Toolbar from './components/Toolbar'
 import Sidebar from './components/Sidebar'
@@ -11,6 +11,16 @@ const DEFAULT_NOISE: NoiseSettings = {
   type: 'grain',
   amount: 20,
   scale: 1,
+}
+
+const DEFAULT_TEXT_OVERLAY: TextOverlay = {
+  enabled: false,
+  content: '',
+  fontFamily: 'Inter',
+  fontSize: 48,
+  color: { r: 255, g: 255, b: 255 },
+  marginX: 20,
+  marginY: 20,
 }
 
 export default function App() {
@@ -26,6 +36,9 @@ export default function App() {
   // Noise
   const [noiseSettings, setNoiseSettings] = useState<NoiseSettings>(DEFAULT_NOISE)
   const [noiseMap, setNoiseMap] = useState<Float32Array | null>(null)
+
+  // Text overlay
+  const [textOverlay, setTextOverlay] = useState<TextOverlay>(DEFAULT_TEXT_OVERLAY)
 
   // History for undo/redo
   const [historyStack, setHistoryStack] = useState<ClusterSnapshot[]>([])
@@ -175,7 +188,7 @@ export default function App() {
     if (imageData) regenerateNoise(imageData, s)
   }, [imageData, regenerateNoise])
 
-  // Download — applies cluster colors + noise, same as canvas render
+  // Download — applies cluster colors + text overlay + noise, same as canvas render
   const handleDownload = (format: 'png' | 'jpeg') => {
     if (!imageData || !clusterMap || !clusters.length) return
 
@@ -202,11 +215,26 @@ export default function App() {
       }
     }
 
-    if (noiseSettings.enabled && noiseSettings.amount > 0 && noiseMap) {
-      applyNoise(out.data, noiseMap, noiseSettings)
+    const hasText = textOverlay.enabled && textOverlay.content.trim().length > 0
+    const hasNoise = noiseSettings.enabled && noiseSettings.amount > 0 && noiseMap
+
+    if (hasText) {
+      ctx.putImageData(out, 0, 0)
+      const { r, g, b } = textOverlay.color
+      ctx.font = `${textOverlay.fontSize}px "${textOverlay.fontFamily}"`
+      ctx.fillStyle = `rgb(${r},${g},${b})`
+      ctx.textBaseline = 'bottom'
+      ctx.fillText(textOverlay.content, textOverlay.marginX, imageData.height - textOverlay.marginY)
+      if (hasNoise) {
+        const withText = ctx.getImageData(0, 0, imageData.width, imageData.height)
+        applyNoise(withText.data, noiseMap!, noiseSettings)
+        ctx.putImageData(withText, 0, 0)
+      }
+    } else {
+      if (hasNoise) applyNoise(out.data, noiseMap!, noiseSettings)
+      ctx.putImageData(out, 0, 0)
     }
 
-    ctx.putImageData(out, 0, 0)
     canvas.toBlob(blob => {
       if (!blob) return
       const url = URL.createObjectURL(blob)
@@ -241,6 +269,7 @@ export default function App() {
           isProcessing={isProcessing}
           totalPixels={totalPixels}
           noiseSettings={noiseSettings}
+          textOverlay={textOverlay}
           onSelectCluster={setSelectedCluster}
           onToggleVisibility={handleToggleVisibility}
           onColorChange={handleColorChange}
@@ -250,6 +279,7 @@ export default function App() {
           onReRun={handleReRun}
           onNoiseSettingsChange={handleNoiseSettingsChange}
           onNoiseRegenerate={handleNoiseRegenerate}
+          onTextOverlayChange={setTextOverlay}
         />
         <div className="canvas-area">
           {imageData && clusterMap && clusters.length > 0 ? (
@@ -261,6 +291,7 @@ export default function App() {
               showOriginal={showOriginal}
               noiseSettings={noiseSettings}
               noiseMap={noiseMap}
+              textOverlay={textOverlay}
               onSelectCluster={setSelectedCluster}
             />
           ) : (
