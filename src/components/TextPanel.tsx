@@ -1,5 +1,5 @@
 import { useEffect, type FC } from 'react'
-import type { ColorFormat, TextOverlay } from '../types'
+import type { ColorFormat, TextAnchor, TextOverlay } from '../types'
 import { loadGoogleFont, FONT_GROUPS } from '../utils/fonts'
 import ColorPicker from './ColorPicker'
 
@@ -11,6 +11,13 @@ interface Props {
   onColorCommit: () => void
 }
 
+const ANCHORS: { value: TextAnchor; label: string }[] = [
+  { value: 'top-left',     label: 'Top Left' },
+  { value: 'top-right',    label: 'Top Right' },
+  { value: 'bottom-left',  label: 'Bottom Left' },
+  { value: 'bottom-right', label: 'Bottom Right' },
+]
+
 const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChange, onColorCommit }) => {
   const merge = (patch: Partial<TextOverlay>): TextOverlay => ({ ...settings, ...patch })
   const set = (patch: Partial<TextOverlay>) => onSettingsChange(merge(patch))
@@ -18,6 +25,9 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
   useEffect(() => {
     loadGoogleFont(settings.fontFamily)
   }, [settings.fontFamily])
+
+  const isRight  = settings.anchor.includes('right')
+  const isBottom = settings.anchor.includes('bottom')
 
   return (
     <div className={`noise-panel ${disabled ? 'noise-disabled' : ''}`}>
@@ -36,6 +46,7 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
 
       {settings.enabled && (
         <div className="noise-body">
+          {/* Text content */}
           <div className="noise-row">
             <p className="noise-row-label">Text</p>
             <input
@@ -47,6 +58,25 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             />
           </div>
 
+          {/* Anchor */}
+          <div className="noise-row">
+            <p className="noise-row-label">Position</p>
+            <div className="anchor-grid">
+              {ANCHORS.map(a => (
+                <button
+                  key={a.value}
+                  className={`anchor-btn ${settings.anchor === a.value ? 'active' : ''}`}
+                  onClick={() => set({ anchor: a.value })}
+                  title={a.label}
+                >
+                  <AnchorIcon anchor={a.value} />
+                  <span className="anchor-label">{a.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Font family */}
           <div className="noise-row">
             <p className="noise-row-label">Font</p>
             <select
@@ -64,6 +94,7 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             </select>
           </div>
 
+          {/* Font size */}
           <div className="noise-row">
             <div className="noise-row-header">
               <p className="noise-row-label">Size</p>
@@ -82,6 +113,7 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             </div>
           </div>
 
+          {/* Color */}
           <div className="noise-row">
             <p className="noise-row-label">Color</p>
             <ColorPicker
@@ -92,9 +124,10 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             />
           </div>
 
+          {/* Horizontal margin label adapts to anchor */}
           <div className="noise-row">
             <div className="noise-row-header">
-              <p className="noise-row-label">Left Margin</p>
+              <p className="noise-row-label">{isRight ? 'Right' : 'Left'} Margin</p>
               <span className="noise-value">{settings.marginX}px</span>
             </div>
             <input
@@ -107,9 +140,10 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             />
           </div>
 
+          {/* Vertical margin label adapts to anchor */}
           <div className="noise-row">
             <div className="noise-row-header">
-              <p className="noise-row-label">Bottom Margin</p>
+              <p className="noise-row-label">{isBottom ? 'Bottom' : 'Top'} Margin</p>
               <span className="noise-value">{settings.marginY}px</span>
             </div>
             <input
@@ -124,6 +158,19 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
         </div>
       )}
     </div>
+  )
+}
+
+function AnchorIcon({ anchor }: { anchor: TextAnchor }) {
+  const right  = anchor.includes('right')
+  const bottom = anchor.includes('bottom')
+  const cx = right  ? 13 : 5
+  const cy = bottom ? 13 : 5
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <rect x="1.5" y="1.5" width="15" height="15" rx="2" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+      <circle cx={cx} cy={cy} r="2.5" fill="currentColor" />
+    </svg>
   )
 }
 

@@ -33,12 +33,15 @@ export interface NoiseSettings {
   scale: number    // 1–8  (fine → coarse grain size)
 }
 
+export type TextAnchor = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+
 export interface TextOverlay {
   enabled: boolean
   content: string
   fontFamily: string
   fontSize: number   // px, relative to source image
   color: RGBColor
-  marginX: number    // px from left edge
-  marginY: number    // px from bottom edge
+  marginX: number    // px from the nearest horizontal edge
+  marginY: number    // px from the nearest vertical edge
+  anchor: TextAnchor
 }

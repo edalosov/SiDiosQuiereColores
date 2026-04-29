@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { Cluster, ClusterSnapshot, ColorFormat, NoiseSettings, RGBColor, TextOverlay } from './types'
 import { generateNoiseMap, applyNoise } from './utils/noise'
+import { drawTextOverlay } from './utils/textDraw'
 import Toolbar from './components/Toolbar'
 import Sidebar from './components/Sidebar'
 import ImageCanvas from './components/ImageCanvas'
@@ -21,6 +22,7 @@ const DEFAULT_TEXT_OVERLAY: TextOverlay = {
   color: { r: 255, g: 255, b: 255 },
   marginX: 20,
   marginY: 20,
+  anchor: 'bottom-left',
 }
 
 export default function App() {
@@ -29,7 +31,7 @@ export default function App() {
   const [clusterMap, setClusterMap] = useState<Uint8Array | null>(null)
   const [clusters, setClusters] = useState<Cluster[]>([])
   const [selectedCluster, setSelectedCluster] = useState<number | null>(null)
-  const [colorFormat, setColorFormat] = useState<ColorFormat>('HSB')
+  const [colorFormat, setColorFormat] = useState<ColorFormat>('HEX')
   const [showOriginal, setShowOriginal] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -220,11 +222,7 @@ export default function App() {
 
     if (hasText) {
       ctx.putImageData(out, 0, 0)
-      const { r, g, b } = textOverlay.color
-      ctx.font = `${textOverlay.fontSize}px "${textOverlay.fontFamily}"`
-      ctx.fillStyle = `rgb(${r},${g},${b})`
-      ctx.textBaseline = 'bottom'
-      ctx.fillText(textOverlay.content, textOverlay.marginX, imageData.height - textOverlay.marginY)
+      drawTextOverlay(ctx, textOverlay, imageData.width, imageData.height)
       if (hasNoise) {
         const withText = ctx.getImageData(0, 0, imageData.width, imageData.height)
         applyNoise(withText.data, noiseMap!, noiseSettings)

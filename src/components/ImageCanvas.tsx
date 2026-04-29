@@ -5,6 +5,7 @@ import {
 import type { Cluster, NoiseSettings, TextOverlay } from '../types'
 import { applyNoise } from '../utils/noise'
 import { loadGoogleFont } from '../utils/fonts'
+import { drawTextOverlay } from '../utils/textDraw'
 
 interface Props {
   imageData: ImageData
@@ -65,11 +66,7 @@ const ImageCanvas: FC<Props> = ({
 
     if (hasText) {
       ctx.putImageData(out, 0, 0)
-      const { r, g, b } = textOverlay.color
-      ctx.font = `${textOverlay.fontSize}px "${textOverlay.fontFamily}"`
-      ctx.fillStyle = `rgb(${r},${g},${b})`
-      ctx.textBaseline = 'bottom'
-      ctx.fillText(textOverlay.content, textOverlay.marginX, imageData.height - textOverlay.marginY)
+      drawTextOverlay(ctx, textOverlay, imageData.width, imageData.height)
       if (hasNoise) {
         const withText = ctx.getImageData(0, 0, imageData.width, imageData.height)
         applyNoise(withText.data, noiseMap!, noiseSettings)

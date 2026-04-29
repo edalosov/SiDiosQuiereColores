@@ -764,3 +764,28 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
 }
 .font-select:focus { border-color: var(--accent) }
 .font-select option, .font-select optgroup { background: var(--sidebar-bg); color: var(--text) }
+
+/* ─── Anchor position selector ──────────────────────────────── */
+.anchor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.anchor-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 11px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.anchor-btn:hover { color: var(--text); border-color: var(--panel-hover) }
+.anchor-btn.active { background: var(--accent); border-color: var(--accent); color: #fff }
+
+.anchor-label { line-height: 1 }
