@@ -584,6 +584,30 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
   box-shadow: 0 4px 40px rgba(0,0,0,0.6);
 }
 
+.canvas-reset-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(14,14,16,0.75);
+  color: var(--text-2);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  z-index: 2;
+}
+.canvas-reset-btn:hover {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
 .canvas-hint {
   position: absolute;
   bottom: 12px;

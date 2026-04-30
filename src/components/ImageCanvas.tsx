@@ -91,25 +91,27 @@ const ImageCanvas: FC<Props> = ({
     loadGoogleFont(textOverlay.fontFamily).then(() => renderRef.current())
   }, [textOverlay.fontFamily, textOverlay.enabled])
 
+  const resetView = useCallback(() => {
+    const container = containerRef.current
+    if (!container) return
+    const cw = container.clientWidth
+    const ch = container.clientHeight
+    const scale = Math.min(cw / imageData.width, ch / imageData.height, 1) * 0.9
+    setZoom(scale)
+    setPan({
+      x: (cw - imageData.width * scale) / 2,
+      y: (ch - imageData.height * scale) / 2,
+    })
+  }, [imageData])
+
   // Set canvas size on image change and fit to container
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     canvas.width = imageData.width
     canvas.height = imageData.height
-
-    const container = containerRef.current
-    if (container) {
-      const cw = container.clientWidth
-      const ch = container.clientHeight
-      const scale = Math.min(cw / imageData.width, ch / imageData.height, 1) * 0.9
-      setZoom(scale)
-      setPan({
-        x: (cw - imageData.width * scale) / 2,
-        y: (ch - imageData.height * scale) / 2,
-      })
-    }
-  }, [imageData])
+    resetView()
+  }, [imageData, resetView])
 
   useEffect(() => { render() }, [render])
 
@@ -189,10 +191,21 @@ const ImageCanvas: FC<Props> = ({
       >
         <canvas ref={canvasRef} className="main-canvas" style={{ imageRendering }} />
       </div>
+      <button className="canvas-reset-btn" onClick={resetView} title="Reset view">
+        <ResetViewIcon />
+      </button>
       <div className="canvas-hint">
         Scroll to zoom · Middle-click drag to pan · Click to select · Click again or Esc to deselect
       </div>
     </div>
+  )
+}
+
+function ResetViewIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 3h7v7H3z" /><path d="M14 3h7v7h-7z" /><path d="M14 14h7v7h-7z" /><path d="M3 14h7v7H3z" />
+    </svg>
   )
 }
 
