@@ -3,7 +3,9 @@ import type { FC } from 'react'
 interface Props {
   hasImage: boolean
   showOriginal: boolean
+  splitView: boolean
   onToggleOriginal: () => void
+  onToggleSplitView: () => void
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
@@ -14,7 +16,9 @@ interface Props {
 const Toolbar: FC<Props> = ({
   hasImage,
   showOriginal,
+  splitView,
   onToggleOriginal,
+  onToggleSplitView,
   canUndo,
   canRedo,
   onUndo,
@@ -58,6 +62,15 @@ const Toolbar: FC<Props> = ({
               {showOriginal ? 'Original' : 'Edited'}
             </button>
 
+            <button
+              className={`btn-toggle ${splitView ? 'active' : ''}`}
+              onClick={onToggleSplitView}
+              title="Split view"
+            >
+              <SplitIcon />
+              Split
+            </button>
+
             <div className="toolbar-divider" />
 
             <div className="download-group">
@@ -95,6 +108,14 @@ function EyeIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" />
       <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+function SplitIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="2" y="3" width="8.5" height="18" rx="1.5" />
+      <rect x="13.5" y="3" width="8.5" height="18" rx="1.5" />
     </svg>
   )
 }

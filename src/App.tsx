@@ -33,6 +33,7 @@ export default function App() {
   const [selectedCluster, setSelectedCluster] = useState<number | null>(null)
   const [colorFormat, setColorFormat] = useState<ColorFormat>('HEX')
   const [showOriginal, setShowOriginal] = useState(false)
+  const [splitView, setSplitView] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
 
   // Noise
@@ -257,7 +258,9 @@ export default function App() {
       <Toolbar
         hasImage={!!imageData}
         showOriginal={showOriginal}
+        splitView={splitView}
         onToggleOriginal={() => setShowOriginal(v => !v)}
+        onToggleSplitView={() => setSplitView(v => !v)}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={handleUndo}
@@ -287,19 +290,42 @@ export default function App() {
         />
         <div className="canvas-area">
           {imageData && clusterMap && clusters.length > 0 ? (
-            <ImageCanvas
-              imageData={imageData}
-              clusterMap={clusterMap}
-              clusters={clusters}
-              selectedCluster={selectedCluster}
-              showOriginal={showOriginal}
-              noiseSettings={noiseSettings}
-              noiseMap={noiseMap}
-              textOverlay={textOverlay}
-              onSelectCluster={setSelectedCluster}
-            />
+            <>
+              <div className="canvas-pane">
+                <ImageCanvas
+                  key={splitView ? 'left' : 'single'}
+                  imageData={imageData}
+                  clusterMap={clusterMap}
+                  clusters={clusters}
+                  selectedCluster={selectedCluster}
+                  showOriginal={showOriginal}
+                  noiseSettings={noiseSettings}
+                  noiseMap={noiseMap}
+                  textOverlay={textOverlay}
+                  onSelectCluster={setSelectedCluster}
+                />
+              </div>
+              {splitView && (
+                <div className="canvas-pane">
+                  <ImageCanvas
+                    key="right"
+                    imageData={imageData}
+                    clusterMap={clusterMap}
+                    clusters={clusters}
+                    selectedCluster={selectedCluster}
+                    showOriginal={showOriginal}
+                    noiseSettings={noiseSettings}
+                    noiseMap={noiseMap}
+                    textOverlay={textOverlay}
+                    onSelectCluster={setSelectedCluster}
+                  />
+                </div>
+              )}
+            </>
           ) : (
-            <ImageUpload onImage={handleImage} />
+            <div className="canvas-pane">
+              <ImageUpload onImage={handleImage} />
+            </div>
           )}
         </div>
       </div>

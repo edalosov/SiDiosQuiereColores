@@ -41,8 +41,18 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
 .canvas-area {
   flex: 1;
   overflow: hidden;
+  display: flex;
+}
+
+.canvas-pane {
+  flex: 1;
+  overflow: hidden;
   position: relative;
   background: var(--bg);
+}
+
+.canvas-pane + .canvas-pane {
+  border-left: 2px solid var(--border);
 }
 
 /* ─── Toolbar ───────────────────────────────────────────────── */
@@ -729,6 +739,37 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
   font-family: 'SF Mono', 'Fira Code', monospace;
   color: var(--text-2);
 }
+
+/* ─── Editable numeric value field (label + input + unit) ───── */
+.noise-value-field {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-2);
+  cursor: text;
+}
+
+.noise-value-input {
+  width: 46px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.noise-value-input:focus { border-color: var(--accent) }
+.noise-value-input::-webkit-inner-spin-button,
+.noise-value-input::-webkit-outer-spin-button { appearance: none }
+.noise-value-input[type=number] { -moz-appearance: textfield }
 
 /* ─── Text overlay panel ────────────────────────────────────── */
 .text-overlay-input {

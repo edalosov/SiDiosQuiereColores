@@ -1,4 +1,4 @@
-import { useEffect, type FC } from 'react'
+import { useEffect, type FC, type ChangeEvent } from 'react'
 import type { ColorFormat, TextAnchor, TextOverlay } from '../types'
 import { loadGoogleFont, FONT_GROUPS } from '../utils/fonts'
 import ColorPicker from './ColorPicker'
@@ -28,6 +28,38 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
 
   const isRight  = settings.anchor.includes('right')
   const isBottom = settings.anchor.includes('bottom')
+
+  // Generic number field handler: commit value on blur/enter, allow free typing
+  function numInput(
+    value: number,
+    min: number,
+    max: number,
+    key: keyof TextOverlay,
+  ) {
+    const clamp = (v: number) => Math.max(min, Math.min(max, v))
+    return {
+      type: 'number' as const,
+      className: 'noise-value-input',
+      value,
+      min,
+      max,
+      onChange: (e: ChangeEvent<HTMLInputElement>) => {
+        const v = +e.target.value
+        if (e.target.value !== '' && !isNaN(v)) set({ [key]: v })
+      },
+      onBlur: (e: ChangeEvent<HTMLInputElement>) => {
+        const v = +e.target.value
+        set({ [key]: isNaN(v) || e.target.value === '' ? value : clamp(v) })
+      },
+      onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+          const v = +(e.target as HTMLInputElement).value
+          set({ [key]: isNaN(v) ? value : clamp(v) });
+          (e.target as HTMLInputElement).blur()
+        }
+      },
+    }
+  }
 
   return (
     <div className={`noise-panel ${disabled ? 'noise-disabled' : ''}`}>
@@ -98,7 +130,10 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
           <div className="noise-row">
             <div className="noise-row-header">
               <p className="noise-row-label">Size</p>
-              <span className="noise-value">{settings.fontSize}px</span>
+              <label className="noise-value-field">
+                <input {...numInput(settings.fontSize, 8, 300, 'fontSize')} />
+                <span>px</span>
+              </label>
             </div>
             <input
               type="range"
@@ -124,11 +159,14 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             />
           </div>
 
-          {/* Horizontal margin label adapts to anchor */}
+          {/* Horizontal margin */}
           <div className="noise-row">
             <div className="noise-row-header">
               <p className="noise-row-label">{isRight ? 'Right' : 'Left'} Margin</p>
-              <span className="noise-value">{settings.marginX}px</span>
+              <label className="noise-value-field">
+                <input {...numInput(settings.marginX, 0, 500, 'marginX')} />
+                <span>px</span>
+              </label>
             </div>
             <input
               type="range"
@@ -140,11 +178,14 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             />
           </div>
 
-          {/* Vertical margin label adapts to anchor */}
+          {/* Vertical margin */}
           <div className="noise-row">
             <div className="noise-row-header">
               <p className="noise-row-label">{isBottom ? 'Bottom' : 'Top'} Margin</p>
-              <span className="noise-value">{settings.marginY}px</span>
+              <label className="noise-value-field">
+                <input {...numInput(settings.marginY, 0, 500, 'marginY')} />
+                <span>px</span>
+              </label>
             </div>
             <input
               type="range"
