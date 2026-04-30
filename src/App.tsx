@@ -149,7 +149,12 @@ export default function App() {
       workerRef.current = null
     }
 
-    worker.postMessage({ pixels: data.data, width: data.width, height: data.height, k })
+    // Copy the pixel buffer then transfer the copy — avoids a slow structured-clone of the full ImageData
+    const pixelsBuf = data.data.buffer.slice(0)
+    worker.postMessage(
+      { pixels: new Uint8Array(pixelsBuf), width: data.width, height: data.height, k },
+      [pixelsBuf],
+    )
   }, [])
 
   const handleImage = (_img: HTMLImageElement, data: ImageData) => {
@@ -199,22 +204,23 @@ export default function App() {
     canvas.height = imageData.height
     const ctx = canvas.getContext('2d')!
     const out = new ImageData(imageData.width, imageData.height)
+    const outView = new Uint32Array(out.data.buffer)
     const n = imageData.width * imageData.height
 
-    for (let i = 0; i < n; i++) {
-      const ci = clusterMap[i]
-      const cluster = clusters[ci]
-      const pi = i * 4
-      if (!cluster || !cluster.visible) {
-        if (format === 'jpeg') {
-          out.data[pi] = 255; out.data[pi + 1] = 255; out.data[pi + 2] = 255; out.data[pi + 3] = 255
-        }
+    // Build per-cluster packed ARGB (little-endian → RGBA bytes in canvas)
+    const lut = new Uint32Array(clusters.length)
+    const white32 = (255 << 24) | (255 << 16) | (255 << 8) | 255
+    clusters.forEach((c, i) => {
+      if (c.visible) {
+        const { r, g, b } = c.currentColor
+        lut[i] = (255 << 24) | (b << 16) | (g << 8) | r
       } else {
-        out.data[pi]     = cluster.currentColor.r
-        out.data[pi + 1] = cluster.currentColor.g
-        out.data[pi + 2] = cluster.currentColor.b
-        out.data[pi + 3] = 255
+        lut[i] = format === 'jpeg' ? white32 : 0
       }
+    })
+
+    for (let i = 0; i < n; i++) {
+      outView[i] = lut[clusterMap[i]]
     }
 
     const hasText = textOverlay.enabled && textOverlay.content.trim().length > 0

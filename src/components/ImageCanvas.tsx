@@ -19,6 +19,20 @@ interface Props {
   onSelectCluster: (id: number | null) => void
 }
 
+// Build a 32-bit ARGB lookup table for each cluster (little-endian: ABGR in memory = RGBA bytes).
+// Writing one Uint32 per pixel is ~4x faster than four separate byte writes.
+function buildLUT(clusters: Cluster[]): Uint32Array {
+  const lut = new Uint32Array(clusters.length)
+  clusters.forEach((c, i) => {
+    if (c.visible) {
+      const { r, g, b } = c.currentColor
+      lut[i] = (255 << 24) | (b << 16) | (g << 8) | r
+    }
+    // invisible → 0 (transparent)
+  })
+  return lut
+}
+
 const ImageCanvas: FC<Props> = ({
   imageData, clusterMap, clusters, selectedCluster, showOriginal,
   noiseSettings, noiseMap, textOverlay,
@@ -43,22 +57,12 @@ const ImageCanvas: FC<Props> = ({
     }
 
     const out = new ImageData(imageData.width, imageData.height)
-    const src = imageData.data
-    const dst = out.data
+    const outView = new Uint32Array(out.data.buffer)
+    const lut = buildLUT(clusters)
     const n = imageData.width * imageData.height
 
     for (let i = 0; i < n; i++) {
-      const ci = clusterMap[i]
-      const cluster = clusters[ci]
-      const pi = i * 4
-      if (!cluster || !cluster.visible) {
-        dst[pi] = 0; dst[pi + 1] = 0; dst[pi + 2] = 0; dst[pi + 3] = 0
-      } else {
-        dst[pi]     = cluster.currentColor.r
-        dst[pi + 1] = cluster.currentColor.g
-        dst[pi + 2] = cluster.currentColor.b
-        dst[pi + 3] = src[pi + 3]
-      }
+      outView[i] = lut[clusterMap[i]]
     }
 
     const hasText = textOverlay.enabled && textOverlay.content.trim().length > 0
@@ -73,7 +77,7 @@ const ImageCanvas: FC<Props> = ({
         ctx.putImageData(withText, 0, 0)
       }
     } else {
-      if (hasNoise) applyNoise(dst, noiseMap!, noiseSettings)
+      if (hasNoise) applyNoise(out.data, noiseMap!, noiseSettings)
       ctx.putImageData(out, 0, 0)
     }
   }, [imageData, clusterMap, clusters, showOriginal, noiseSettings, noiseMap, textOverlay])
@@ -132,7 +136,6 @@ const ImageCanvas: FC<Props> = ({
     return () => el.removeEventListener('wheel', handler)
   }, [handleWheel])
 
-  // Pan with middle mouse button
   const handleMouseDown = (e: RMouseEvent) => {
     if (e.button === 1) {
       e.preventDefault()
@@ -154,7 +157,6 @@ const ImageCanvas: FC<Props> = ({
     if (e.button === 1) setIsPanning(false)
   }
 
-  // Click: select cluster, or deselect if clicking the already-selected one
   const handleClick = (e: RMouseEvent) => {
     if (didPan.current) return
     const rect = containerRef.current!.getBoundingClientRect()
@@ -164,6 +166,9 @@ const ImageCanvas: FC<Props> = ({
     const clicked = clusterMap[cy * imageData.width + cx]
     onSelectCluster(clicked === selectedCluster ? null : clicked)
   }
+
+  // Pixelated rendering only when zoomed in past 100% — smooth downsampling otherwise
+  const imageRendering = zoom >= 1 ? 'pixelated' : 'auto'
 
   return (
     <div
@@ -182,7 +187,7 @@ const ImageCanvas: FC<Props> = ({
           transformOrigin: '0 0',
         }}
       >
-        <canvas ref={canvasRef} className="main-canvas" />
+        <canvas ref={canvasRef} className="main-canvas" style={{ imageRendering }} />
       </div>
       <div className="canvas-hint">
         Scroll to zoom · Middle-click drag to pan · Click to select · Click again or Esc to deselect

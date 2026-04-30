@@ -570,7 +570,7 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
 
 .main-canvas {
   display: block;
-  image-rendering: pixelated;
+  /* image-rendering set dynamically in ImageCanvas based on zoom level */
   box-shadow: 0 4px 40px rgba(0,0,0,0.6);
 }
 
