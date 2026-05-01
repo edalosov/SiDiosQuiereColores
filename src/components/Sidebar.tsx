@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { useState, type FC } from 'react'
 import type { Cluster, ColorFormat, NoiseSettings, RGBColor, TextOverlay } from '../types'
 import ClusterSwatch from './ClusterSwatch'
 import ColorPicker from './ColorPicker'
@@ -46,6 +46,14 @@ const Sidebar: FC<Props> = ({
   onNoiseRegenerate,
   onTextOverlayChange,
 }) => {
+  const [sortBy, setSortBy] = useState<'percent' | 'brightness'>('percent')
+
+  const sortedClusters = [...clusters].sort((a, b) => {
+    if (sortBy === 'percent') return b.pixelCount - a.pixelCount
+    const lum = (c: typeof a) => 0.299 * c.currentColor.r + 0.587 * c.currentColor.g + 0.114 * c.currentColor.b
+    return lum(a) - lum(b) // dark → light
+  })
+
   const selected = selectedCluster !== null ? clusters[selectedCluster] : null
 
   return (
@@ -100,9 +108,29 @@ const Sidebar: FC<Props> = ({
 
       {/* Cluster list */}
       <section className="sidebar-section">
-        <p className="sidebar-label">
-          {clusters.length > 0 ? `${clusters.length} Clusters` : 'No image loaded'}
-        </p>
+        <div className="cluster-list-header">
+          <p className="sidebar-label">
+            {clusters.length > 0 ? `${clusters.length} Clusters` : 'No image loaded'}
+          </p>
+          {clusters.length > 0 && (
+            <div className="cluster-sort-toggle">
+              <button
+                className={`cluster-sort-btn ${sortBy === 'percent' ? 'active' : ''}`}
+                onClick={() => setSortBy('percent')}
+                title="Sort by coverage"
+              >
+                %
+              </button>
+              <button
+                className={`cluster-sort-btn ${sortBy === 'brightness' ? 'active' : ''}`}
+                onClick={() => setSortBy('brightness')}
+                title="Sort by brightness (dark → light)"
+              >
+                <BrightnessIcon />
+              </button>
+            </div>
+          )}
+        </div>
         {isProcessing && (
           <div className="processing-state">
             <Spinner />
@@ -110,7 +138,7 @@ const Sidebar: FC<Props> = ({
           </div>
         )}
         <div className="cluster-list">
-          {clusters.map(cluster => (
+          {sortedClusters.map(cluster => (
             <ClusterSwatch
               key={cluster.id}
               cluster={cluster}
@@ -176,6 +204,22 @@ const Sidebar: FC<Props> = ({
         />
       </section>
     </aside>
+  )
+}
+
+function BrightnessIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="2" x2="12" y2="4" />
+      <line x1="12" y1="20" x2="12" y2="22" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="2" y1="12" x2="4" y2="12" />
+      <line x1="20" y1="12" x2="22" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
   )
 }
 
