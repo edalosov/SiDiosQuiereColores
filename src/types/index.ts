@@ -12,6 +12,8 @@ export interface HSBColor {
 
 export type ColorFormat = 'HSB' | 'HEX' | 'RGB'
 
+export type ToolMode = 'select' | 'lasso'
+
 export interface Cluster {
   id: number
   originalColor: RGBColor

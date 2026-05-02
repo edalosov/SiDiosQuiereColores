@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import type { Cluster, ClusterSnapshot, ColorFormat, NoiseSettings, RGBColor, TextOverlay } from './types'
+import type { Cluster, ClusterSnapshot, ColorFormat, NoiseSettings, RGBColor, TextOverlay, ToolMode } from './types'
 import { generateNoiseMap, applyNoise } from './utils/noise'
 import { drawTextOverlay } from './utils/textDraw'
 import Toolbar from './components/Toolbar'
@@ -60,6 +60,11 @@ export default function App() {
 
   // Text overlay
   const [textOverlay, setTextOverlay] = useState<TextOverlay>(DEFAULT_TEXT_OVERLAY)
+
+  // Lasso tool
+  const [toolMode, setToolMode] = useState<ToolMode>('select')
+  const [lassoColor, setLassoColor] = useState<RGBColor>({ r: 255, g: 255, b: 255 })
+  const [pixelOverrides, setPixelOverrides] = useState<Map<number, number>>(new Map())
 
   // History for undo/redo
   const [historyStack, setHistoryStack] = useState<ClusterSnapshot[]>([])
@@ -130,6 +135,7 @@ export default function App() {
 
     setIsProcessing(true)
     setSelectedCluster(null)
+    setPixelOverrides(new Map())
 
     const worker = new Worker(
       new URL('./workers/kmeans.worker.ts', import.meta.url),
@@ -239,6 +245,16 @@ export default function App() {
     if (imageData) regenerateNoise(imageData, s)
   }, [imageData, regenerateNoise])
 
+  const handleLassoFill = useCallback((overrides: Map<number, number>) => {
+    setPixelOverrides(prev => {
+      const next = new Map(prev)
+      for (const [k, v] of overrides) next.set(k, v)
+      return next
+    })
+  }, [])
+
+  const handleClearPixelOverrides = () => setPixelOverrides(new Map())
+
   // Download — applies cluster colors + text overlay + noise, same as canvas render
   const handleDownload = (format: 'png' | 'jpeg') => {
     if (!imageData || !clusterMap || !clusters.length) return
@@ -266,6 +282,8 @@ export default function App() {
     for (let i = 0; i < n; i++) {
       outView[i] = lut[clusterMap[i]]
     }
+
+    for (const [idx, color] of pixelOverrides) outView[idx] = color
 
     const hasText = textOverlay.enabled && textOverlay.content.trim().length > 0
     const hasNoise = noiseSettings.enabled && noiseSettings.amount > 0 && noiseMap
@@ -309,9 +327,11 @@ export default function App() {
         hasImage={!!imageData}
         showOriginal={showOriginal}
         splitView={splitView}
+        toolMode={toolMode}
         onToggleOriginal={() => setShowOriginal(v => !v)}
         onToggleSplitView={() => setSplitView(v => !v)}
         onUploadNew={handleUploadNew}
+        onToggleToolMode={() => setToolMode(m => m === 'lasso' ? 'select' : 'lasso')}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={handleUndo}
@@ -328,6 +348,9 @@ export default function App() {
           totalPixels={totalPixels}
           noiseSettings={noiseSettings}
           textOverlay={textOverlay}
+          toolMode={toolMode}
+          lassoColor={lassoColor}
+          hasLassoOverrides={pixelOverrides.size > 0}
           onSelectCluster={setSelectedCluster}
           onToggleVisibility={handleToggleVisibility}
           onColorChange={handleColorChange}
@@ -338,6 +361,8 @@ export default function App() {
           onNoiseSettingsChange={handleNoiseSettingsChange}
           onNoiseRegenerate={handleNoiseRegenerate}
           onTextOverlayChange={setTextOverlay}
+          onLassoColorChange={setLassoColor}
+          onClearLassoOverrides={handleClearPixelOverrides}
         />
         <div className="canvas-area">
           {imageData && clusterMap && clusters.length > 0 ? (
@@ -353,7 +378,11 @@ export default function App() {
                   noiseSettings={noiseSettings}
                   noiseMap={noiseMap}
                   textOverlay={textOverlay}
+                  toolMode={toolMode}
+                  lassoColor={lassoColor}
+                  pixelOverrides={pixelOverrides}
                   onSelectCluster={setSelectedCluster}
+                  onLassoFill={handleLassoFill}
                 />
               </div>
               {splitView && (
@@ -368,7 +397,11 @@ export default function App() {
                     noiseSettings={noiseSettings}
                     noiseMap={noiseMap}
                     textOverlay={textOverlay}
+                    toolMode={toolMode}
+                    lassoColor={lassoColor}
+                    pixelOverrides={pixelOverrides}
                     onSelectCluster={setSelectedCluster}
+                    onLassoFill={handleLassoFill}
                   />
                 </div>
               )}

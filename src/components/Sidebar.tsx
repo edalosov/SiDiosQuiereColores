@@ -1,5 +1,5 @@
 import { useState, type FC } from 'react'
-import type { Cluster, ColorFormat, NoiseSettings, RGBColor, TextOverlay } from '../types'
+import type { Cluster, ColorFormat, NoiseSettings, RGBColor, TextOverlay, ToolMode } from '../types'
 import ClusterSwatch from './ClusterSwatch'
 import ColorPicker from './ColorPicker'
 import NoisePanel from './NoisePanel'
@@ -14,6 +14,9 @@ interface Props {
   totalPixels: number
   noiseSettings: NoiseSettings
   textOverlay: TextOverlay
+  toolMode: ToolMode
+  lassoColor: RGBColor
+  hasLassoOverrides: boolean
   onSelectCluster: (id: number | null) => void
   onToggleVisibility: (id: number) => void
   onColorChange: (id: number, color: RGBColor) => void
@@ -24,6 +27,8 @@ interface Props {
   onNoiseSettingsChange: (s: NoiseSettings) => void
   onNoiseRegenerate: (s: NoiseSettings) => void
   onTextOverlayChange: (s: TextOverlay) => void
+  onLassoColorChange: (c: RGBColor) => void
+  onClearLassoOverrides: () => void
 }
 
 const Sidebar: FC<Props> = ({
@@ -35,6 +40,9 @@ const Sidebar: FC<Props> = ({
   totalPixels,
   noiseSettings,
   textOverlay,
+  toolMode,
+  lassoColor,
+  hasLassoOverrides,
   onSelectCluster,
   onToggleVisibility,
   onColorChange,
@@ -45,6 +53,8 @@ const Sidebar: FC<Props> = ({
   onNoiseSettingsChange,
   onNoiseRegenerate,
   onTextOverlayChange,
+  onLassoColorChange,
+  onClearLassoOverrides,
 }) => {
   const [sortBy, setSortBy] = useState<'percent' | 'brightness'>('percent')
 
@@ -173,6 +183,29 @@ const Sidebar: FC<Props> = ({
             >
               Reset to original
             </button>
+          </section>
+        </>
+      )}
+
+      {/* Lasso tool color */}
+      {toolMode === 'lasso' && (
+        <>
+          <div className="sidebar-divider" />
+          <section className="sidebar-section">
+            <p className="sidebar-label">Lasso Fill Color</p>
+            <div className="lasso-section">
+              <ColorPicker
+                color={lassoColor}
+                format={colorFormat}
+                onChange={onLassoColorChange}
+                onCommit={() => {}}
+              />
+              {hasLassoOverrides && (
+                <button className="btn-clear-lasso" onClick={onClearLassoOverrides}>
+                  Clear lasso edits
+                </button>
+              )}
+            </div>
           </section>
         </>
       )}

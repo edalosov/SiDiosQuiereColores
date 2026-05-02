@@ -1,12 +1,15 @@
 import type { FC } from 'react'
+import type { ToolMode } from '../types'
 
 interface Props {
   hasImage: boolean
   showOriginal: boolean
   splitView: boolean
+  toolMode: ToolMode
   onToggleOriginal: () => void
   onToggleSplitView: () => void
   onUploadNew: () => void
+  onToggleToolMode: () => void
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
@@ -18,9 +21,11 @@ const Toolbar: FC<Props> = ({
   hasImage,
   showOriginal,
   splitView,
+  toolMode,
   onToggleOriginal,
   onToggleSplitView,
   onUploadNew,
+  onToggleToolMode,
   canUndo,
   canRedo,
   onUndo,
@@ -59,6 +64,17 @@ const Toolbar: FC<Props> = ({
                 <RedoIcon />
               </button>
             </div>
+
+            <div className="toolbar-divider" />
+
+            <button
+              className={`btn-toggle ${toolMode === 'lasso' ? 'active' : ''}`}
+              onClick={onToggleToolMode}
+              title="Lasso fill tool"
+            >
+              <LassoIcon />
+              Lasso
+            </button>
 
             <div className="toolbar-divider" />
 
@@ -134,6 +150,13 @@ function SplitIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="2" y="3" width="8.5" height="18" rx="1.5" />
       <rect x="13.5" y="3" width="8.5" height="18" rx="1.5" />
+    </svg>
+  )
+}
+function LassoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 3C7.03 3 3 6.36 3 10.5c0 2.5 1.5 4.7 3.8 6.1L5 21l4.5-1.5c.8.2 1.6.3 2.5.3 5 0 9-3.36 9-7.5S17 3 12 3z" />
     </svg>
   )
 }
