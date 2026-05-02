@@ -25,6 +25,24 @@ const DEFAULT_TEXT_OVERLAY: TextOverlay = {
   anchor: 'bottom-left',
 }
 
+// Match new clusters to old ones by nearest original brightness, restore custom colors.
+function preserveColors(prev: Cluster[], next: Cluster[]): Cluster[] {
+  return next.map(nc => {
+    const nl = (nc.originalColor.r + nc.originalColor.g + nc.originalColor.b) / 3
+    let best = prev[0]
+    let bestDist = Infinity
+    for (const oc of prev) {
+      const d = Math.abs((oc.originalColor.r + oc.originalColor.g + oc.originalColor.b) / 3 - nl)
+      if (d < bestDist) { bestDist = d; best = oc }
+    }
+    const { r: or, g: og, b: ob } = best.originalColor
+    const { r: cr, g: cg, b: cb } = best.currentColor
+    // Only restore if the user actually changed the color from its original
+    if (cr === or && cg === og && cb === ob) return nc
+    return { ...nc, currentColor: best.currentColor }
+  })
+}
+
 export default function App() {
   const [imageData, setImageData] = useState<ImageData | null>(null)
   const [clusterCount, setClusterCount] = useState(5)
@@ -50,6 +68,7 @@ export default function App() {
   const workerRef = useRef<Worker | null>(null)
   const clustersRef = useRef<Cluster[]>(clusters)
   useEffect(() => { clustersRef.current = clusters }, [clusters])
+  const uploadRef = useRef<HTMLInputElement>(null)
 
   // Regenerate noise map when image is loaded or type/scale changes
   const regenerateNoise = useCallback((
@@ -106,7 +125,7 @@ export default function App() {
     restoreSnapshot(historyStack[ni])
   }
 
-  const runClustering = useCallback((data: ImageData, k: number) => {
+  const runClustering = useCallback((data: ImageData, k: number, prevClusters?: Cluster[]) => {
     if (workerRef.current) workerRef.current.terminate()
 
     setIsProcessing(true)
@@ -125,13 +144,17 @@ export default function App() {
         pixelCounts: Uint32Array
       }
 
-      const newClusters: Cluster[] = centroids.map((c, i) => ({
+      let newClusters: Cluster[] = centroids.map((c, i) => ({
         id: i,
         originalColor: { r: c[0], g: c[1], b: c[2] },
         currentColor:  { r: c[0], g: c[1], b: c[2] },
         visible: true,
         pixelCount: pixelCounts[i],
       }))
+
+      if (prevClusters && prevClusters.length > 0) {
+        newClusters = preserveColors(prevClusters, newClusters)
+      }
 
       setClusterMap(map)
       setClusters(newClusters)
@@ -160,17 +183,37 @@ export default function App() {
 
   const handleImage = (_img: HTMLImageElement, data: ImageData) => {
     setImageData(data)
-    runClustering(data, clusterCount)
+    runClustering(data, clusterCount) // fresh image → no color preservation
     regenerateNoise(data, noiseSettings)
+  }
+
+  const handleUploadNew = () => uploadRef.current?.click()
+
+  const handleUploadFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+    e.target.value = ''
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0)
+      handleImage(img, ctx.getImageData(0, 0, canvas.width, canvas.height))
+      URL.revokeObjectURL(url)
+    }
+    img.src = url
   }
 
   const handleClusterCountChange = (n: number) => {
     setClusterCount(n)
-    if (imageData) runClustering(imageData, n)
+    if (imageData) runClustering(imageData, n, clusters)
   }
 
   const handleReRun = () => {
-    if (imageData) runClustering(imageData, clusterCount)
+    if (imageData) runClustering(imageData, clusterCount, clusters)
   }
 
   const handleColorChange = (id: number, color: RGBColor) => {
@@ -255,12 +298,20 @@ export default function App() {
 
   return (
     <div className="app">
+      <input
+        ref={uploadRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleUploadFile}
+      />
       <Toolbar
         hasImage={!!imageData}
         showOriginal={showOriginal}
         splitView={splitView}
         onToggleOriginal={() => setShowOriginal(v => !v)}
         onToggleSplitView={() => setSplitView(v => !v)}
+        onUploadNew={handleUploadNew}
         canUndo={canUndo}
         canRedo={canRedo}
         onUndo={handleUndo}

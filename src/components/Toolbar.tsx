@@ -6,6 +6,7 @@ interface Props {
   splitView: boolean
   onToggleOriginal: () => void
   onToggleSplitView: () => void
+  onUploadNew: () => void
   canUndo: boolean
   canRedo: boolean
   onUndo: () => void
@@ -19,6 +20,7 @@ const Toolbar: FC<Props> = ({
   splitView,
   onToggleOriginal,
   onToggleSplitView,
+  onUploadNew,
   canUndo,
   canRedo,
   onUndo,
@@ -30,8 +32,15 @@ const Toolbar: FC<Props> = ({
       <span className="toolbar-title">Si Dios Quiere Colores</span>
 
       <div className="toolbar-actions">
+        <button className="btn-toggle" onClick={onUploadNew} title="Upload a new image">
+          <UploadIcon />
+          Upload
+        </button>
+
         {hasImage && (
           <>
+            <div className="toolbar-divider" />
+
             <div className="toolbar-group">
               <button
                 className="btn-icon"
@@ -89,6 +98,15 @@ const Toolbar: FC<Props> = ({
   )
 }
 
+function UploadIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  )
+}
 function UndoIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
