@@ -888,6 +888,48 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
 
 .anchor-label { line-height: 1 }
 
+/* ─── Cluster run buttons ───────────────────────────────────── */
+.cluster-run-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.cluster-run-btns .btn-rerun {
+  flex: 1;
+}
+
+.btn-autocluster {
+  min-width: 0;
+}
+
+/* ─── Text overlay cluster color swatches ───────────────────── */
+.text-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.text-color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+}
+.text-color-swatch:hover { transform: scale(1.12) }
+.text-color-swatch.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.text-color-empty {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
 /* ─── Lasso overlay ─────────────────────────────────────────── */
 .lasso-overlay {
   position: absolute;

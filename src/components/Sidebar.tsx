@@ -58,6 +58,11 @@ const Sidebar: FC<Props> = ({
 }) => {
   const [sortBy, setSortBy] = useState<'percent' | 'brightness'>('percent')
 
+  const uniqueColorCount = new Set(
+    clusters.map(c => `${c.currentColor.r},${c.currentColor.g},${c.currentColor.b}`)
+  ).size
+  const canAutoCluster = clusters.length > 0 && uniqueColorCount < clusters.length
+
   const sortedClusters = [...clusters].sort((a, b) => {
     if (sortBy === 'percent') return b.pixelCount - a.pixelCount
     const lum = (c: typeof a) => 0.299 * c.currentColor.r + 0.587 * c.currentColor.g + 0.114 * c.currentColor.b
@@ -104,14 +109,28 @@ const Sidebar: FC<Props> = ({
         <div className="cluster-slider-labels">
           <span>2</span><span>9</span>
         </div>
-        <button
-          className="btn-rerun"
-          onClick={onReRun}
-          disabled={isProcessing}
-        >
-          <RefreshIcon />
-          {isProcessing ? 'Processing…' : 'Re-run Clustering'}
-        </button>
+        <div className="cluster-run-btns">
+          <button
+            className="btn-rerun"
+            onClick={onReRun}
+            disabled={isProcessing}
+            title="Re-run k-means with the same cluster count"
+          >
+            <RefreshIcon />
+            {isProcessing ? 'Processing…' : 'Re-run'}
+          </button>
+          <button
+            className="btn-rerun btn-autocluster"
+            onClick={() => onClusterCountChange(uniqueColorCount)}
+            disabled={isProcessing || !canAutoCluster}
+            title={canAutoCluster
+              ? `Re-cluster using ${uniqueColorCount} unique colors`
+              : 'All clusters already have unique colors'}
+          >
+            <AutoIcon />
+            {canAutoCluster ? `Auto (${uniqueColorCount})` : 'Auto'}
+          </button>
+        </div>
       </section>
 
       <div className="sidebar-divider" />
@@ -212,6 +231,19 @@ const Sidebar: FC<Props> = ({
 
       <div className="sidebar-divider" />
 
+      {/* Text overlay */}
+      <section className="sidebar-section">
+        <p className="sidebar-label">Text Overlay</p>
+        <TextPanel
+          settings={textOverlay}
+          disabled={clusters.length === 0}
+          clusters={clusters}
+          onSettingsChange={onTextOverlayChange}
+        />
+      </section>
+
+      <div className="sidebar-divider" />
+
       {/* Noise & texture */}
       <section className="sidebar-section">
         <p className="sidebar-label">Noise & Texture</p>
@@ -220,20 +252,6 @@ const Sidebar: FC<Props> = ({
           disabled={clusters.length === 0}
           onSettingsChange={onNoiseSettingsChange}
           onRegenerate={onNoiseRegenerate}
-        />
-      </section>
-
-      <div className="sidebar-divider" />
-
-      {/* Text overlay */}
-      <section className="sidebar-section">
-        <p className="sidebar-label">Text Overlay</p>
-        <TextPanel
-          settings={textOverlay}
-          disabled={clusters.length === 0}
-          colorFormat={colorFormat}
-          onSettingsChange={onTextOverlayChange}
-          onColorCommit={onColorCommit}
         />
       </section>
     </aside>
@@ -261,6 +279,15 @@ function RefreshIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M23 4v6h-6" /><path d="M1 20v-6h6" />
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+  )
+}
+
+function AutoIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
     </svg>
   )
 }

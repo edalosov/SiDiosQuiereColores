@@ -1,14 +1,12 @@
 import { useEffect, type FC, type ChangeEvent } from 'react'
-import type { ColorFormat, TextAnchor, TextOverlay } from '../types'
+import type { Cluster, RGBColor, TextAnchor, TextOverlay } from '../types'
 import { loadGoogleFont, FONT_GROUPS } from '../utils/fonts'
-import ColorPicker from './ColorPicker'
 
 interface Props {
   settings: TextOverlay
   disabled: boolean
-  colorFormat: ColorFormat
+  clusters: Cluster[]
   onSettingsChange: (s: TextOverlay) => void
-  onColorCommit: () => void
 }
 
 const ANCHORS: { value: TextAnchor; label: string }[] = [
@@ -18,7 +16,7 @@ const ANCHORS: { value: TextAnchor; label: string }[] = [
   { value: 'bottom-right', label: 'Bottom Right' },
 ]
 
-const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChange, onColorCommit }) => {
+const TextPanel: FC<Props> = ({ settings, disabled, clusters, onSettingsChange }) => {
   const merge = (patch: Partial<TextOverlay>): TextOverlay => ({ ...settings, ...patch })
   const set = (patch: Partial<TextOverlay>) => onSettingsChange(merge(patch))
 
@@ -29,13 +27,7 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
   const isRight  = settings.anchor.includes('right')
   const isBottom = settings.anchor.includes('bottom')
 
-  // Generic number field handler: commit value on blur/enter, allow free typing
-  function numInput(
-    value: number,
-    min: number,
-    max: number,
-    key: keyof TextOverlay,
-  ) {
+  function numInput(value: number, min: number, max: number, key: keyof TextOverlay) {
     const clamp = (v: number) => Math.max(min, Math.min(max, v))
     return {
       type: 'number' as const,
@@ -60,6 +52,16 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
       },
     }
   }
+
+  // Deduplicated cluster colors for the color swatch picker
+  const colorKey = (c: RGBColor) => `${c.r},${c.g},${c.b}`
+  const uniqueColors: RGBColor[] = []
+  const seen = new Set<string>()
+  for (const c of clusters) {
+    const k = colorKey(c.currentColor)
+    if (!seen.has(k)) { seen.add(k); uniqueColors.push(c.currentColor) }
+  }
+  const activeKey = colorKey(settings.color)
 
   return (
     <div className={`noise-panel ${disabled ? 'noise-disabled' : ''}`}>
@@ -148,15 +150,28 @@ const TextPanel: FC<Props> = ({ settings, disabled, colorFormat, onSettingsChang
             </div>
           </div>
 
-          {/* Color */}
+          {/* Color — cluster palette swatches */}
           <div className="noise-row">
             <p className="noise-row-label">Color</p>
-            <ColorPicker
-              color={settings.color}
-              format={colorFormat}
-              onChange={color => set({ color })}
-              onCommit={onColorCommit}
-            />
+            {uniqueColors.length > 0 ? (
+              <div className="text-color-swatches">
+                {uniqueColors.map(c => {
+                  const k = colorKey(c)
+                  const isActive = k === activeKey
+                  return (
+                    <button
+                      key={k}
+                      className={`text-color-swatch ${isActive ? 'active' : ''}`}
+                      style={{ background: `rgb(${c.r},${c.g},${c.b})` }}
+                      onClick={() => set({ color: c })}
+                      title={`rgb(${c.r}, ${c.g}, ${c.b})`}
+                    />
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-color-empty">Load an image to see colors</p>
+            )}
           </div>
 
           {/* Horizontal margin */}
@@ -216,3 +231,4 @@ function AnchorIcon({ anchor }: { anchor: TextAnchor }) {
 }
 
 export default TextPanel
+
