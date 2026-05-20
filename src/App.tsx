@@ -222,15 +222,38 @@ export default function App() {
     if (imageData) runClustering(imageData, clusterCount, clusters)
   }
 
+  const colorKey = (c: RGBColor) => `${c.r},${c.g},${c.b}`
+
   const handleColorChange = (id: number, color: RGBColor) => {
-    setClusters(prev => prev.map(c => c.id === id ? { ...c, currentColor: color } : c))
+    // Update all clusters that currently share the same color as the edited one
+    setClusters(prev => {
+      const source = prev.find(c => c.id === id)
+      if (!source) return prev
+      const srcKey = colorKey(source.currentColor)
+      return prev.map(c =>
+        c.id === id || colorKey(c.currentColor) === srcKey ? { ...c, currentColor: color } : c
+      )
+    })
   }
 
   const handleColorCommit = () => { pushHistory(clustersRef.current) }
 
   const handleToggleVisibility = (id: number) => {
     setClusters(prev => {
-      const next = prev.map(c => c.id === id ? { ...c, visible: !c.visible } : c)
+      const source = prev.find(c => c.id === id)
+      if (!source) return prev
+      const srcKey = colorKey(source.currentColor)
+      const next = prev.map(c =>
+        c.id === id || colorKey(c.currentColor) === srcKey ? { ...c, visible: !source.visible } : c
+      )
+      pushHistory(next)
+      return next
+    })
+  }
+
+  const handleResetGroup = (ids: number[]) => {
+    setClusters(prev => {
+      const next = prev.map(c => ids.includes(c.id) ? { ...c, currentColor: c.originalColor } : c)
       pushHistory(next)
       return next
     })
@@ -363,6 +386,7 @@ export default function App() {
           onTextOverlayChange={setTextOverlay}
           onLassoColorChange={setLassoColor}
           onClearLassoOverrides={handleClearPixelOverrides}
+          onResetGroup={handleResetGroup}
         />
         <div className="canvas-area">
           {imageData && clusterMap && clusters.length > 0 ? (

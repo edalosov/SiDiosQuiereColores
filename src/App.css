@@ -399,6 +399,19 @@ body { background: var(--bg); color: var(--text); overflow: hidden }
 .swatch-pct {
   font-size: 10px;
   color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.swatch-group-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 3px;
+  padding: 1px 4px;
 }
 
 .swatch-eye {

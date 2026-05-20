@@ -7,6 +7,7 @@ interface Props {
   selected: boolean
   format: ColorFormat
   totalPixels: number
+  groupSize?: number
   onSelect: () => void
   onToggleVisibility: () => void
 }
@@ -16,6 +17,7 @@ const ClusterSwatch: FC<Props> = ({
   selected,
   format,
   totalPixels,
+  groupSize = 1,
   onSelect,
   onToggleVisibility,
 }) => {
@@ -44,12 +46,15 @@ const ClusterSwatch: FC<Props> = ({
       />
       <div className="swatch-info">
         <span className="swatch-label">{label}</span>
-        <span className="swatch-pct">{pct}%</span>
+        <span className="swatch-pct">
+          {pct}%
+          {groupSize > 1 && <span className="swatch-group-badge">×{groupSize}</span>}
+        </span>
       </div>
       <button
         className="swatch-eye"
         onClick={e => { e.stopPropagation(); onToggleVisibility() }}
-        title={cluster.visible ? 'Hide cluster' : 'Show cluster'}
+        title={cluster.visible ? 'Hide' : 'Show'}
       >
         {cluster.visible ? <EyeIcon /> : <EyeOffIcon />}
       </button>
@@ -77,3 +82,4 @@ function EyeOffIcon() {
 }
 
 export default ClusterSwatch
+

@@ -29,6 +29,7 @@ interface Props {
   onTextOverlayChange: (s: TextOverlay) => void
   onLassoColorChange: (c: RGBColor) => void
   onClearLassoOverrides: () => void
+  onResetGroup: (ids: number[]) => void
 }
 
 const Sidebar: FC<Props> = ({
@@ -55,21 +56,37 @@ const Sidebar: FC<Props> = ({
   onTextOverlayChange,
   onLassoColorChange,
   onClearLassoOverrides,
+  onResetGroup,
 }) => {
   const [sortBy, setSortBy] = useState<'percent' | 'brightness'>('percent')
 
-  const uniqueColorCount = new Set(
-    clusters.map(c => `${c.currentColor.r},${c.currentColor.g},${c.currentColor.b}`)
-  ).size
-  const canAutoCluster = clusters.length > 0 && uniqueColorCount < clusters.length
+  const ck = (c: Cluster) => `${c.currentColor.r},${c.currentColor.g},${c.currentColor.b}`
 
-  const sortedClusters = [...clusters].sort((a, b) => {
-    if (sortBy === 'percent') return b.pixelCount - a.pixelCount
-    const lum = (c: typeof a) => 0.299 * c.currentColor.r + 0.587 * c.currentColor.g + 0.114 * c.currentColor.b
-    return lum(a) - lum(b) // dark → light
+  // Group clusters by current color
+  const groupMap = new Map<string, Cluster[]>()
+  for (const c of clusters) {
+    const key = ck(c)
+    if (!groupMap.has(key)) groupMap.set(key, [])
+    groupMap.get(key)!.push(c)
+  }
+
+  // Sort groups
+  const colorGroups = Array.from(groupMap.values()).sort((a, b) => {
+    const aTotal = a.reduce((s, c) => s + c.pixelCount, 0)
+    const bTotal = b.reduce((s, c) => s + c.pixelCount, 0)
+    if (sortBy === 'percent') return bTotal - aTotal
+    const lum = (c: Cluster) => 0.299 * c.currentColor.r + 0.587 * c.currentColor.g + 0.114 * c.currentColor.b
+    return lum(a[0]) - lum(b[0])
   })
 
-  const selected = selectedCluster !== null ? clusters[selectedCluster] : null
+  const uniqueColorCount = colorGroups.length
+  const canAutoCluster = clusters.length > 0 && uniqueColorCount < clusters.length
+
+  // Find which group contains the currently-selected cluster
+  const selectedGroup = selectedCluster !== null
+    ? colorGroups.find(g => g.some(c => c.id === selectedCluster)) ?? null
+    : null
+  const selectedRep = selectedGroup ? selectedGroup[0] : null
 
   return (
     <aside className="sidebar">
@@ -167,38 +184,46 @@ const Sidebar: FC<Props> = ({
           </div>
         )}
         <div className="cluster-list">
-          {sortedClusters.map(cluster => (
-            <ClusterSwatch
-              key={cluster.id}
-              cluster={cluster}
-              selected={selectedCluster === cluster.id}
-              format={colorFormat}
-              totalPixels={totalPixels}
-              onSelect={() => onSelectCluster(selectedCluster === cluster.id ? null : cluster.id)}
-              onToggleVisibility={() => onToggleVisibility(cluster.id)}
-            />
-          ))}
+          {colorGroups.map(group => {
+            const rep = group[0]
+            const totalPx = group.reduce((s, c) => s + c.pixelCount, 0)
+            const isSelected = group.some(c => c.id === selectedCluster)
+            const repId = rep.id
+            return (
+              <ClusterSwatch
+                key={ck(rep)}
+                cluster={{ ...rep, pixelCount: totalPx }}
+                selected={isSelected}
+                format={colorFormat}
+                totalPixels={totalPixels}
+                groupSize={group.length}
+                onSelect={() => onSelectCluster(isSelected ? null : repId)}
+                onToggleVisibility={() => onToggleVisibility(repId)}
+              />
+            )
+          })}
         </div>
       </section>
 
-      {/* Color picker for selected cluster */}
-      {selected && (
+      {/* Color picker for selected group */}
+      {selectedRep && (
         <>
           <div className="sidebar-divider" />
           <section className="sidebar-section">
-            <p className="sidebar-label">Edit Cluster {selected.id + 1}</p>
+            <p className="sidebar-label">
+              {selectedGroup!.length > 1
+                ? `Edit Color (×${selectedGroup!.length} clusters)`
+                : 'Edit Color'}
+            </p>
             <ColorPicker
-              color={selected.currentColor}
+              color={selectedRep.currentColor}
               format={colorFormat}
-              onChange={color => onColorChange(selected.id, color)}
+              onChange={color => onColorChange(selectedRep.id, color)}
               onCommit={onColorCommit}
             />
             <button
               className="btn-reset"
-              onClick={() => {
-                onColorChange(selected.id, selected.originalColor)
-                onColorCommit()
-              }}
+              onClick={() => onResetGroup(selectedGroup!.map(c => c.id))}
             >
               Reset to original
             </button>
