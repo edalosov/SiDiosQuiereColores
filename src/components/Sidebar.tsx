@@ -30,6 +30,7 @@ interface Props {
   onLassoColorChange: (c: RGBColor) => void
   onClearLassoOverrides: () => void
   onResetGroup: (ids: number[]) => void
+  onShuffleColors: () => void
 }
 
 const Sidebar: FC<Props> = ({
@@ -57,6 +58,7 @@ const Sidebar: FC<Props> = ({
   onLassoColorChange,
   onClearLassoOverrides,
   onResetGroup,
+  onShuffleColors,
 }) => {
   const [sortBy, setSortBy] = useState<'percent' | 'brightness'>('percent')
 
@@ -148,6 +150,15 @@ const Sidebar: FC<Props> = ({
             {canAutoCluster ? `Auto (${uniqueColorCount})` : 'Auto'}
           </button>
         </div>
+        <button
+          className="btn-rerun"
+          onClick={onShuffleColors}
+          disabled={isProcessing || uniqueColorCount < 2}
+          title="Shuffle colors between groups — keeps boundaries, swaps assignments"
+        >
+          <ShuffleIcon />
+          Shuffle Colors
+        </button>
       </section>
 
       <div className="sidebar-divider" />
@@ -313,6 +324,18 @@ function AutoIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+    </svg>
+  )
+}
+
+function ShuffleIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polyline points="16 3 21 3 21 8" />
+      <line x1="4" y1="20" x2="21" y2="3" />
+      <polyline points="21 16 21 21 16 21" />
+      <line x1="15" y1="15" x2="21" y2="21" />
+      <line x1="4" y1="4" x2="9" y2="9" />
     </svg>
   )
 }

@@ -259,6 +259,36 @@ export default function App() {
     })
   }
 
+  const handleShuffleColors = () => {
+    const colorMap = new Map<string, { ids: number[]; color: RGBColor }>()
+    for (const c of clustersRef.current) {
+      const key = `${c.currentColor.r},${c.currentColor.g},${c.currentColor.b}`
+      if (!colorMap.has(key)) colorMap.set(key, { ids: [], color: c.currentColor })
+      colorMap.get(key)!.ids.push(c.id)
+    }
+    const groups = Array.from(colorMap.values())
+    if (groups.length < 2) return
+
+    // Fisher-Yates shuffle of the color list, ensuring it's not the identity
+    const colors = groups.map(g => g.color)
+    let shuffled = [...colors]
+    do {
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+    } while (shuffled.every((c, i) => c === colors[i]))
+
+    const idToColor = new Map<number, RGBColor>()
+    groups.forEach((g, i) => { for (const id of g.ids) idToColor.set(id, shuffled[i]) })
+
+    setClusters(prev => {
+      const next = prev.map(c => ({ ...c, currentColor: idToColor.get(c.id) ?? c.currentColor }))
+      pushHistory(next)
+      return next
+    })
+  }
+
   const handleNoiseSettingsChange = (s: NoiseSettings) => {
     setNoiseSettings(s)
   }
@@ -387,6 +417,7 @@ export default function App() {
           onLassoColorChange={setLassoColor}
           onClearLassoOverrides={handleClearPixelOverrides}
           onResetGroup={handleResetGroup}
+          onShuffleColors={handleShuffleColors}
         />
         <div className="canvas-area">
           {imageData && clusterMap && clusters.length > 0 ? (
